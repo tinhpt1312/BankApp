@@ -14,4 +14,6 @@ public interface UserService {
     BankResponse debitAccount(CreditDebitRequest debitDebitRequest);
     BankResponse transfer(TransferRequest transferRequest);
     List<User> findAll();
+    BankResponse login(LoginDto loginDto);
+    BankResponse updateAccount(String email, UserRequest userRequest);
 }

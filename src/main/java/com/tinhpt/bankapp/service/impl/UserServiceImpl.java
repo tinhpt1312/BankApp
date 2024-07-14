@@ -1,20 +1,29 @@
 package com.tinhpt.bankapp.service.impl;
 
+import com.tinhpt.bankapp.config.JwtTokenProvider;
 import com.tinhpt.bankapp.dto.*;
+import com.tinhpt.bankapp.entity.Role;
 import com.tinhpt.bankapp.entity.User;
 import com.tinhpt.bankapp.repository.UserRepository;
 import com.tinhpt.bankapp.service.EmailService;
 import com.tinhpt.bankapp.service.TransactionService;
 import com.tinhpt.bankapp.service.UserService;
 import com.tinhpt.bankapp.utils.AccountUtils;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -25,6 +34,15 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     TransactionService transactionService;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    AuthenticationManager authenticationManager;
+
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
 
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
@@ -50,9 +68,11 @@ public class UserServiceImpl implements UserService {
                 .accountNumber(AccountUtils.generateAccountNumber())
                 .accountBalance(BigDecimal.ZERO)
                 .email(userRequest.getEmail())
+                .password(passwordEncoder.encode(userRequest.getPassword()))
                 .phoneNumber(userRequest.getPhoneNumber())
                 .alternativePhoneNumber(userRequest.getAlternativePhoneNumber())
                 .status("ACTIVE")
+                .role(Role.valueOf("ROLE_ADMIN"))
                 .build();
 
         User savedUser = userRepository.save(newUser);
@@ -66,6 +86,51 @@ public class UserServiceImpl implements UserService {
                         "\nAccount Number: " +savedUser.getAccountNumber())
                 .build();
         emailService.sendEmailAlert(emailDetails);
+
+        return BankResponse.builder()
+                .responseCode(AccountUtils.ACCOUNT_CREATION_SUCCESS)
+                .responseMessage(AccountUtils.ACCOUNT_CREATION_MESSAGE)
+                .accountInfo(AccountInfo.builder()
+                        .accountBalance(savedUser.getAccountBalance())
+                        .accountNumber(savedUser.getAccountNumber())
+                        .accountName(savedUser.getFirstName() + " " + savedUser.getLastName() + " " + savedUser.getOtherName())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public BankResponse login(LoginDto loginDto){
+        Authentication authentication = null;
+        authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+        );
+
+        EmailDetails loginAlert = EmailDetails.builder()
+                .subject("You are logged in!")
+                .recipient(loginDto.getEmail())
+                .messageBody("You logged into your account. If you did not initiate this request, please contact your bank")
+                .build();
+        emailService.sendEmailAlert(loginAlert);
+        return BankResponse.builder()
+                .responseCode("Login Success")
+                .responseMessage(jwtTokenProvider.generateToken(authentication))
+                .build();
+    }
+
+    @Override
+    public BankResponse updateAccount(String email, UserRequest userRequest) {
+        User user = userRepository.findByEmail(email).get();
+        if (user.equals("")){
+            BankResponse response = BankResponse.builder()
+                    .responseCode(AccountUtils.ACCOUNT_EXISTS_CODE)
+                    .responseMessage(AccountUtils.ACCOUNT_EXISTS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+
+        User savedUser = userRepository.save(user);
 
         return BankResponse.builder()
                 .responseCode(AccountUtils.ACCOUNT_CREATION_SUCCESS)
@@ -264,6 +329,8 @@ public class UserServiceImpl implements UserService {
     public List<User> findAll() {
         return userRepository.findAll();
     }
+
+
 
 
 }

@@ -38,6 +38,11 @@ public class UserController {
         return userService.createAccount(userRequest);
     }
 
+    @PostMapping("/login")
+    public BankResponse login(@RequestBody LoginDto loginDto){
+        return userService.login(loginDto);
+    }
+
     @Operation(
             summary = "Balance Enquiry",
             description = "Given an account number, check how much the user has"
@@ -76,5 +81,10 @@ public class UserController {
     @GetMapping("all")
     public List<User> getAll(){
         return userService.findAll();
+    }
+
+    @PutMapping("{email}")
+    public BankResponse update(@PathVariable String email, @RequestBody UserRequest userRequest){
+        return userService.updateAccount(email, userRequest);
     }
 }
