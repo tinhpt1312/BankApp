@@ -1,13 +1,12 @@
 package com.tinhpt.bankapp.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,25 +14,27 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "transactions")
-public class Transaction {
-
+@Table(name = "accounts")
+public class Account {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String transactionId;
-
-    private String transactionType;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String accountNumber;
 
-    private BigDecimal amount;
+    private String accountType;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    private BigDecimal balance;
 
     private String status;
 
     @CreationTimestamp
-    private LocalDate createAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDate modifiedAt;
-
+    private LocalDateTime modifiedAt;
 }

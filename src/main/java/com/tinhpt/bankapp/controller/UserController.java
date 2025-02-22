@@ -3,12 +3,10 @@ package com.tinhpt.bankapp.controller;
 
 import com.tinhpt.bankapp.dto.*;
 import com.tinhpt.bankapp.entity.User;
-import com.tinhpt.bankapp.repository.UserRepository;
 import com.tinhpt.bankapp.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,11 +16,11 @@ import java.util.List;
 @Tag(name = "User Account Managenment APIs")
 public class UserController {
 
-    @Autowired
-    UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    UserRepository userRepository;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @Operation(
             summary = "Create new user account",
